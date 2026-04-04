@@ -17,6 +17,7 @@
     "zlogger": "^1.1.0"
   },
   "devDependencies": {
+    "@types/node": "^24.6.0",
     "autod": "^3.1.0",
     "coffee": "^5.2.2",
     "egg-bin": "^4.14.1",
@@ -24,6 +25,7 @@
     "eslint": "^6.8.0",
     "eslint-config-egg": "^8.0.1",
     "mm": "^2.5.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "engines": {
@@ -31,14 +33,14 @@
   },
   "scripts": {
     "autod": "autod",
-    "build": "npm run clean && tsc -p tsconfig.json && eslint --fix \"lib/*.js\" \"lib/command/*.js\" && node -e \"require('fs').chmodSync('lib/ssh.js', 0o755)\"",
-    "clean": "node -e \"const fs = require('fs'); ['lib/program.js', 'lib/cache.js', 'lib/utils.js', 'lib/ssh.js', 'lib/base_command.js'].forEach(file => fs.rmSync(file, { force: true })); fs.rmSync('lib/command', { recursive: true, force: true });\"",
+    "build": "npm run clean && tsc -p tsconfig.build.json && tsc --module CommonJS --target ES2020 --moduleResolution Node --resolveJsonModule --esModuleInterop false --strict false --skipLibCheck --types node --noEmitOnError bin/projj.ts && eslint --no-ignore --fix \"bin/projj.js\" \"lib/*.js\" \"lib/command/*.js\" && node -e \"const fs = require('fs'); ['bin/projj.js', 'lib/ssh.js'].forEach(file => fs.chmodSync(file, 0o755));\"",
+    "clean": "node -e \"const fs = require('fs'); fs.rmSync('bin/projj.js', { force: true }); fs.rmSync('lib', { recursive: true, force: true });\"",
     "lint": "eslint .",
-    "smoke:add": "node test/smoke_add.js",
+    "smoke:add": "npm run build && node -r ts-node/register/transpile-only test/smoke_add.ts",
     "test": "npm run lint -- --fix && npm run test-local",
-    "test-local": "egg-bin test",
+    "test-local": "npm run build && egg-bin test --ts --tscompiler ts-node/register/transpile-only",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "cov": "egg-bin cov",
+    "cov": "npm run build && egg-bin cov --ts --tscompiler ts-node/register/transpile-only",
     "ci": "npm run lint && npm run build && npm run typecheck && npm run cov",
     "prepack": "npm run build"
   },
@@ -52,7 +54,7 @@
     "projj": "bin/projj.js"
   },
   "files": [
-    "bin",
+    "bin/projj.js",
     "lib"
   ],
   "repository": {

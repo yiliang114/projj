@@ -34,6 +34,7 @@ describe('test/build_contract.test.js', () => {
     const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
     const sourceCommandDir = path.join(repoRoot, 'src', 'command');
     const files = [
+      path.join(repoRoot, 'bin/projj.js'),
       path.join(repoRoot, 'lib/base_command.js'),
       ...fs.readdirSync(sourceCommandDir)
         .filter(file => file.endsWith('.ts'))

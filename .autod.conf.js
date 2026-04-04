@@ -9,13 +9,18 @@ module.exports = {
   dep: [
   ],
   devdep: [
+    '@types/node',
     'egg-ci',
     'egg-bin',
     'autod',
     'eslint',
     'eslint-config-egg',
+    'ts-node',
+    'typescript',
   ],
   exclude: [
+    './bin/projj.js',
+    './lib',
     './test/fixtures',
     './dist',
   ],
