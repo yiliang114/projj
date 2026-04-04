@@ -52,6 +52,8 @@ Install the scoped package globally. The executable remains `projj`.
 $ npm i -g @yiliang114/projj
 ```
 
+Requires Node.js 18 or newer.
+
 ## Usage
 
 ### Initialize

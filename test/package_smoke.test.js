@@ -38,6 +38,7 @@ describe('test/package_smoke.test.js', () => {
     cp.execFileSync('tar', [ '-xzf', tarballPath, '-C', extractDir ]);
 
     const packageDir = path.join(extractDir, 'package');
+    const packagedManifest = require(path.join(packageDir, 'package.json'));
     cp.execFileSync(npmCommand, [ 'install', '--prefix', installDir, tarballPath ], {
       cwd: path.join(__dirname, '..'),
       encoding: 'utf8',
@@ -56,6 +57,7 @@ describe('test/package_smoke.test.js', () => {
     assert(fs.existsSync(path.join(packageDir, 'bin/projj.js')));
     assert(fs.existsSync(path.join(packageDir, 'lib/program.js')));
     assert(fs.existsSync(path.join(installedPackageDir, 'bin/projj.js')));
+    assert.strictEqual(packagedManifest.engines.node, '>=18.0.0');
     assert.strictEqual(versionOutput, require('../package.json').version + '\n');
     assert(/Usage: \[command\] \[options]/.test(helpOutput));
   });
