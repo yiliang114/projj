@@ -31,7 +31,7 @@
   },
   "scripts": {
     "autod": "autod",
-    "build": "npm run clean && tsc -p tsconfig.json && eslint --fix lib/program.js",
+    "build": "npm run clean && tsc -p tsconfig.json && eslint --fix lib/program.js lib/cache.js",
     "clean": "node -e \"require('fs').rmSync('lib/program.js', { force: true });\"",
     "lint": "eslint .",
     "smoke:add": "node test/smoke_add.js",
