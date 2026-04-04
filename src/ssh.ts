@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-'use strict';
-Object.defineProperty(exports, '__esModule', { value: true });
-const childProcess = require('child_process');
+
+import childProcess = require('child_process');
+
 const args = [
   '-o', 'StrictHostKeyChecking=no',
 ].concat(process.argv.slice(2));
+
 childProcess.spawn('ssh', args, {
   stdio: 'inherit',
 });

@@ -12,6 +12,7 @@ describe('test/cache.test.js', () => {
     const cacheModulePath = path.join(repoRoot, 'lib/cache.js');
     const originalSource = fs.readFileSync(cacheModulePath, 'utf8');
     const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+    const eslintCommand = path.join(repoRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'eslint.cmd' : 'eslint');
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'projj-cache-test-'));
     const cachePath = path.join(tmpDir, 'cache.json');
 
@@ -25,7 +26,7 @@ describe('test/cache.test.js', () => {
         encoding: 'utf8',
         stdio: 'pipe',
       });
-      cp.execFileSync(npmCommand, [ 'run', 'lint', '--', 'lib/cache.js' ], {
+      cp.execFileSync(eslintCommand, [ 'lib/cache.js' ], {
         cwd: repoRoot,
         encoding: 'utf8',
         stdio: 'pipe',
