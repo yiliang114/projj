@@ -1,10 +1,10 @@
-'use strict';
 const chalk = require('chalk');
 const clipboardy = require('clipboardy');
 const utils = require('../utils');
 const BaseCommand = require('../base_command');
+
 class FindCommand extends BaseCommand {
-  async _run(cwd, [ repo ]) {
+  async _run(cwd: string, [ repo ]: string[]) {
     if (!repo) {
       this.logger.error('Please specify the repo name:');
       this.childLogger.error(chalk.white('For example:'), chalk.green('projj find', chalk.yellow('example')));
@@ -12,6 +12,7 @@ class FindCommand extends BaseCommand {
     }
     const keys = await this.cache.getKeys();
     const matched = this.matchRepoKeys(keys, repo);
+
     if (!matched.length) {
       this.logger.error('Can not find repo %s', chalk.yellow(repo));
       return;
@@ -35,7 +36,8 @@ class FindCommand extends BaseCommand {
     }
     await this.copyPath(repo, dir);
   }
-  async choose(choices) {
+
+  async choose(choices: string[]) {
     return await this.prompt({
       name: 'key',
       type: 'list',
@@ -43,17 +45,20 @@ class FindCommand extends BaseCommand {
       choices,
     });
   }
-  async copyPath(repo, dir) {
+
+  async copyPath(repo: string, dir: string) {
     try {
       this.logger.info('find repo %s\'s location: %s', repo, dir);
       await clipboardy.write(`cd ${dir}`);
       this.logger.info(chalk.green('📋  Copied to clipboard') + ', just use Ctrl+V');
-    } catch (e) {
+    } catch (e: any) {
       this.logger.warn('Fail to copy to clipboard, error: %s', e.message);
     }
   }
+
   get description() {
     return 'Find repository';
   }
 }
-module.exports = FindCommand;
+
+export = FindCommand;

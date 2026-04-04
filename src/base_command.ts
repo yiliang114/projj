@@ -1,6 +1,6 @@
-'use strict';
-const path = require('path');
-const fs = require('mz/fs');
+import path = require('path');
+import fs = require('mz/fs');
+
 const inquirer = require('inquirer');
 const mkdirp = require('mz-modules/mkdirp');
 const BaseCommand = require('common-bin');
@@ -10,13 +10,16 @@ const runscript = require('runscript');
 const giturl = require('giturl');
 const readJSON = require('utility').readJSON;
 const Cache = require('./cache');
+
 const PROMPT = Symbol('prompt');
+
 const configDir = path.join(process.env.HOME, '.projj');
 const configPath = path.join(configDir, 'config.json');
 const cachePath = path.join(configDir, 'cache.json');
 const consoleLogger = new ConsoleLogger({
   time: false,
 });
+
 const defaults = {
   base: `${process.env.HOME}/projj`,
   hooks: {},
@@ -24,8 +27,15 @@ const defaults = {
     'github://': 'https://github.com/',
   },
 };
+
 class Command extends BaseCommand {
-  constructor(rawArgv) {
+  logger: any;
+  childLogger: any;
+  cache: any;
+  config: any;
+  [PROMPT]?: any;
+
+  constructor(rawArgv?: string[]) {
     super(rawArgv);
     this.logger = new ConsoleLogger({
       prefix: chalk.green('✔︎  '),
@@ -39,32 +49,38 @@ class Command extends BaseCommand {
     });
     this.cache = new Cache({ cachePath });
   }
-  async run({ cwd, rawArgv }) {
+
+  async run({ cwd, rawArgv }: { cwd: string; rawArgv: string[] }) {
     try {
       await this.init();
       await this._run(cwd, rawArgv);
       consoleLogger.info('✨  Done');
-    } catch (err) {
+    } catch (err: any) {
       this.error(err.message);
       process.exit(1);
     }
   }
+
   async init() {
     await this.loadConfig();
+
     const cache = await this.cache.get();
+
     if (!cache.version) {
       this.logger.warn('Upgrade cache');
       const baseDir = await this.chooseBaseDirectory();
       const keys = await this.cache.getKeys();
       for (const key of keys) {
-        if (path.isAbsolute(key)) { continue; }
+        if (path.isAbsolute(key)) continue;
         const value = cache[key];
         await this.cache.remove([ key ]);
         await this.cache.set(path.join(baseDir, key), value);
       }
+
       await this.cache.upgrade();
     }
   }
+
   async loadConfig() {
     await mkdirp(configDir);
     const configExists = await fs.exists(configPath);
@@ -77,6 +93,7 @@ class Command extends BaseCommand {
         return;
       }
     }
+
     const question = {
       type: 'input',
       name: 'base',
@@ -87,22 +104,26 @@ class Command extends BaseCommand {
     this.config = resolveConfig({ base }, defaults);
     await fs.writeFile(configPath, JSON.stringify(this.config, null, 2));
   }
-  async runHook(name, cacheKey) {
-    if (!this.config.hooks[name]) { return; }
+
+  async runHook(name: string, cacheKey?: string) {
+    if (!this.config.hooks[name]) return;
     const hook = this.config.hooks[name];
     const env = this.buildHookEnv(name);
     if (this.config[name]) {
       env.PROJJ_HOOK_CONFIG = JSON.stringify(this.config[name]);
     }
-    const opt = {
+    const opt: any = {
       env: Object.assign({}, process.env, env),
     };
+
     const cwd = cacheKey;
-    if (cwd && (await fs.exists(cwd))) { opt.cwd = cwd; }
+    if (cwd && (await fs.exists(cwd))) opt.cwd = cwd;
+
     this.logger.info('Run hook %s for %s', chalk.green(name), cacheKey);
     await this.runScript(hook, opt);
   }
-  async prompt(questions) {
+
+  async prompt(questions: any) {
     if (!this[PROMPT]) {
       this[PROMPT] = inquirer.createPromptModule();
       const promptMapping = this[PROMPT].prompts;
@@ -111,7 +132,7 @@ class Command extends BaseCommand {
         promptMapping[key] = class CustomPrompt extends Clz {
           run() {
             process.send && process.send({ type: 'prompt', name: this.opt.name });
-            process.emit('message', { type: 'prompt', name: this.opt.name });
+            (process.emit as any)('message', { type: 'prompt', name: this.opt.name });
             return super.run();
           }
         };
@@ -119,20 +140,22 @@ class Command extends BaseCommand {
     }
     return this[PROMPT](questions);
   }
-  async runScript(cmd, opt) {
+
+  async runScript(cmd: string, opt?: any) {
     opt = Object.assign({}, {
       stdio: 'pipe',
     }, opt);
     try {
       const stdio = await runscript(cmd, opt);
       this.forwardScriptOutput(stdio);
-    } catch (err) {
+    } catch (err: any) {
       this.forwardScriptOutput(err.stdio);
       throw err;
     }
   }
-  forwardScriptOutput(stdio) {
-    if (!stdio) { return; }
+
+  forwardScriptOutput(stdio?: { stdout?: any; stderr?: any }) {
+    if (!stdio) return;
     if (stdio.stdout) {
       for (const line of splitLines(stdio.stdout)) {
         this.childLogger.log(line);
@@ -144,17 +167,22 @@ class Command extends BaseCommand {
       }
     }
   }
-  error(msg) {
+
+  error(msg: string) {
     consoleLogger.error(chalk.red('✘  ' + msg));
   }
-  url2dir(url) {
+
+  url2dir(url: string) {
     url = giturl.parse(url);
     return url.replace(/https?:\/\//, '');
   }
-  async addRepo(repo, cacheKey) {
+
+  async addRepo(repo: string, cacheKey: string) {
     await this.runHook('preadd', cacheKey);
+
     const targetPath = cacheKey;
     this.logger.info('Cloning into %s', chalk.green(targetPath));
+
     const env = this.buildGitEnv();
     this.logGitProxySettings(env);
     await this.runScript(this.buildCloneCommand(repo, targetPath), {
@@ -162,11 +190,14 @@ class Command extends BaseCommand {
     });
     await this.cache.set(cacheKey, { repo });
     await this.cache.dump();
+
     await this.runHook('postadd', cacheKey);
   }
+
   async chooseBaseDirectory() {
     const baseDirectories = this.config.base;
-    if (baseDirectories.length === 1) { return baseDirectories[0]; }
+    if (baseDirectories.length === 1) return baseDirectories[0];
+
     const question = {
       type: 'list',
       name: 'base',
@@ -176,67 +207,83 @@ class Command extends BaseCommand {
     const { base } = await this.prompt([ question ]);
     return base;
   }
-  buildCloneCommand(repo, targetPath) {
+
+  buildCloneCommand(repo: string, targetPath: string) {
     return `git clone --progress ${repo} ${targetPath}`;
   }
-  buildHookEnv(name, env = process.env, delimiter = path.delimiter) {
+
+  buildHookEnv(name: string, env = process.env, delimiter = path.delimiter): Record<string, string> {
     const hookDir = path.join(configDir, 'hooks');
     const hookPath = env.PATH ? `${hookDir}${delimiter}${env.PATH}` : hookDir;
+
     return {
       PATH: hookPath,
       PROJJ_HOOK_NAME: name,
     };
   }
+
   buildGitEnv(env = process.env) {
     return Object.assign({
       GIT_SSH: path.join(__dirname, 'ssh.js'),
     }, env, normalizeProxyEnv(env));
   }
-  logGitProxySettings(env) {
+
+  logGitProxySettings(env: Record<string, string | undefined>) {
     const proxySettings = [];
-    if (env.https_proxy) { proxySettings.push(`https_proxy=${maskProxyValue(env.https_proxy)}`); }
-    if (env.http_proxy) { proxySettings.push(`http_proxy=${maskProxyValue(env.http_proxy)}`); }
-    if (env.all_proxy) { proxySettings.push(`all_proxy=${maskProxyValue(env.all_proxy)}`); }
-    if (env.no_proxy) { proxySettings.push(`no_proxy=${env.no_proxy}`); }
+    if (env.https_proxy) proxySettings.push(`https_proxy=${maskProxyValue(env.https_proxy)}`);
+    if (env.http_proxy) proxySettings.push(`http_proxy=${maskProxyValue(env.http_proxy)}`);
+    if (env.all_proxy) proxySettings.push(`all_proxy=${maskProxyValue(env.all_proxy)}`);
+    if (env.no_proxy) proxySettings.push(`no_proxy=${env.no_proxy}`);
     if (proxySettings.length > 0) {
       this.logger.info('Detected git proxy settings: %s', chalk.cyan(proxySettings.join(', ')));
     }
   }
-  normalizeCacheKey(key) {
+
+  normalizeCacheKey(key: string) {
     return key.replace(/\\/g, '/');
   }
-  getRepoKey(key) {
+
+  getRepoKey(key: string) {
     const normalizedKey = this.normalizeCacheKey(key);
     const baseDirectories = (this.config && this.config.base) || [];
+
     for (const baseDir of baseDirectories) {
       const normalizedBaseDir = this.normalizeCacheKey(baseDir).replace(/\/+$/, '');
-      if (normalizedKey === normalizedBaseDir) { return ''; }
+      if (normalizedKey === normalizedBaseDir) return '';
       if (normalizedKey.startsWith(`${normalizedBaseDir}/`)) {
         return normalizedKey.slice(normalizedBaseDir.length + 1);
       }
     }
+
     return normalizedKey;
   }
-  matchRepoKeys(keys, repo) {
+
+  matchRepoKeys(keys: string[], repo: string) {
     const normalizedRepo = this.normalizeCacheKey(repo);
     const suffix = normalizedRepo.replace(/^\/?/, '/');
+
     let matched = keys.filter(key => this.getRepoKey(key).endsWith(suffix));
     if (!matched.length) {
       matched = keys.filter(key => this.getRepoKey(key).includes(normalizedRepo));
     }
+
     return matched;
   }
-  getRepoLabel(key) {
+
+  getRepoLabel(key: string) {
     const parts = this.getRepoKey(key).split('/').filter(Boolean);
     return parts.slice(-2).join('/');
   }
 }
-function resolveConfig(config, defaultConfig) {
+
+export = Command;
+
+function resolveConfig(config: any, defaultConfig: any) {
   config = Object.assign({}, defaultConfig, config);
   if (!Array.isArray(config.base)) {
     config.base = [ config.base ];
   }
-  config.base = config.base.map(baseDir => {
+  config.base = config.base.map((baseDir: string) => {
     switch (baseDir[0]) {
       case '.':
         return path.join(path.dirname(configPath), baseDir);
@@ -248,10 +295,12 @@ function resolveConfig(config, defaultConfig) {
         return path.join(process.cwd(), baseDir);
     }
   });
+
   return config;
 }
-function normalizeProxyEnv(env) {
-  const normalized = {};
+
+function normalizeProxyEnv(env: Record<string, string | undefined>) {
+  const normalized: Record<string, string> = {};
   applyProxyPair(normalized, 'https_proxy', 'HTTPS_PROXY', pickFirstEnvValue(env, [
     'https_proxy',
     'HTTPS_PROXY',
@@ -278,18 +327,21 @@ function normalizeProxyEnv(env) {
   ]));
   return normalized;
 }
-function applyProxyPair(target, lowerKey, upperKey, value) {
-  if (!value) { return; }
+
+function applyProxyPair(target: Record<string, string>, lowerKey: string, upperKey: string, value?: string) {
+  if (!value) return;
   target[lowerKey] = value;
   target[upperKey] = value;
 }
-function pickFirstEnvValue(env, keys) {
+
+function pickFirstEnvValue(env: Record<string, string | undefined>, keys: string[]) {
   for (const key of keys) {
-    if (env[key]) { return env[key]; }
+    if (env[key]) return env[key];
   }
   return undefined;
 }
-function maskProxyValue(value) {
+
+function maskProxyValue(value: string) {
   try {
     const url = new URL(value);
     if (url.username || url.password) {
@@ -301,10 +353,10 @@ function maskProxyValue(value) {
     return value.replace(/\/\/[^@]+@/, '//***:***@');
   }
 }
-function splitLines(value) {
+
+function splitLines(value: any) {
   return String(value)
     .replace(/\r\n/g, '\n')
     .split('\n')
     .filter(line => line.length > 0);
 }
-module.exports = Command;

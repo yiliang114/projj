@@ -31,8 +31,8 @@
   },
   "scripts": {
     "autod": "autod",
-    "build": "npm run clean && tsc -p tsconfig.json && eslint --fix lib/program.js lib/cache.js lib/utils.js lib/ssh.js && node -e \"require('fs').chmodSync('lib/ssh.js', 0o755)\"",
-    "clean": "node -e \"const fs = require('fs'); ['lib/program.js', 'lib/cache.js', 'lib/utils.js', 'lib/ssh.js'].forEach(file => fs.rmSync(file, { force: true }));\"",
+    "build": "npm run clean && tsc -p tsconfig.json && eslint --fix \"lib/*.js\" \"lib/command/*.js\" && node -e \"require('fs').chmodSync('lib/ssh.js', 0o755)\"",
+    "clean": "node -e \"const fs = require('fs'); ['lib/program.js', 'lib/cache.js', 'lib/utils.js', 'lib/ssh.js', 'lib/base_command.js'].forEach(file => fs.rmSync(file, { force: true })); fs.rmSync('lib/command', { recursive: true, force: true });\"",
     "lint": "eslint .",
     "smoke:add": "node test/smoke_add.js",
     "test": "npm run lint -- --fix && npm run test-local",
