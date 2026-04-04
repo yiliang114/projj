@@ -43,7 +43,7 @@
     "prepack": "npm run build"
   },
   "ci": {
-    "version": "10, 12",
+    "version": "18, 20",
     "license": {
       "fullname": "popomore"
     }
