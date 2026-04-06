@@ -288,7 +288,7 @@ jobs:
       PLAN: ${{ needs.plan.outputs.val }}
       GITHUB_USER: "axo bot"
       GITHUB_EMAIL: "admin+bot@axo.dev"
-    if: ${{ !fromJson(needs.plan.outputs.val).announcement_is_prerelease || fromJson(needs.plan.outputs.val).publish_prereleases }}
+    if: ${{ false }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -328,7 +328,7 @@ jobs:
     needs:
       - plan
       - host
-    if: ${{ !fromJson(needs.plan.outputs.val).announcement_is_prerelease || fromJson(needs.plan.outputs.val).publish_prereleases }}
+    if: ${{ false }}
     uses: ./.github/workflows/publish-crates-io.yml
     with:
       plan: ${{ needs.plan.outputs.val }}

@@ -9,10 +9,10 @@ Every git repo gets a predictable home based on its URL:
 ```
 $BASE/
 ├── github.com/
-│   └── popomore/
+│   └── yiliang114/
 │       └── projj/
 └── gitlab.com/
-    └── popomore/
+    └── team/
         └── projj/
 ```
 
@@ -21,11 +21,11 @@ No more `~/code/misc/old-projj-backup`. Clone once, find instantly.
 ## Install
 
 ```bash
-# Cargo
-cargo install projj
+# Install directly from this fork
+cargo install --git https://github.com/yiliang114/projj projj
 
-# Homebrew (after first release)
-brew install popomore/tap/projj
+# Or build locally
+cargo build --release
 ```
 
 ## Quick Start
@@ -35,7 +35,7 @@ brew install popomore/tap/projj
 projj init
 
 # Clone a repo
-projj add popomore/projj
+projj add yiliang114/projj
 
 # Find and jump to a repo
 projj find projj
@@ -75,10 +75,10 @@ Also runs `post_add` hooks for all existing repos (e.g. syncs to zoxide).
 Clone a repo into the conventional directory structure.
 
 ```bash
-projj add git@github.com:popomore/projj.git              # SSH
-projj add https://github.com/popomore/projj              # HTTPS
+projj add git@github.com:yiliang114/projj.git             # SSH
+projj add https://github.com/yiliang114/projj             # HTTPS
 projj add ssh://git@git.gitlab.cn:2224/web/cms.git        # SSH with port
-projj add popomore/projj                                  # short form (uses default platform)
+projj add yiliang114/projj                                 # short form (uses default platform)
 projj add ./local/repo                                     # move local repo into structure
 ```
 
@@ -144,7 +144,7 @@ command = "zoxide"                    # → ~/.projj/hooks/zoxide
 event = "post_add"
 matcher = "github\\.com"
 command = "git_config_user"           # → ~/.projj/hooks/git_config_user
-env = { PROJJ_GIT_NAME = "popomore", PROJJ_GIT_EMAIL = "me@example.com" }
+env = { PROJJ_GIT_NAME = "yiliang114", PROJJ_GIT_EMAIL = "me@example.com" }
 
 [[hooks]]
 event = "post_add"
@@ -188,9 +188,9 @@ Hooks receive context via environment variables:
 PROJJ_EVENT        — event name
 PROJJ_REPO_PATH    — full path to repo
 PROJJ_REPO_HOST    — e.g. github.com
-PROJJ_REPO_OWNER   — e.g. popomore
+PROJJ_REPO_OWNER   — e.g. yiliang114
 PROJJ_REPO_NAME    — e.g. projj
-PROJJ_REPO_URL     — e.g. git@github.com:popomore/projj.git
+PROJJ_REPO_URL     — e.g. git@github.com:yiliang114/projj.git
 ```
 
 And JSON via stdin for richer parsing.
