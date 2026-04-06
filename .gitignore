@@ -1,7 +1,10 @@
 /node_modules/
+bin/projj.js
 coverage/
 cache.json
+lib/
 .nyc_output/
 !test/fixtures/hook/.projj/cache.json
 !test/fixtures/multiple-directory/.projj/cache.json
 .github/
+.worktrees/

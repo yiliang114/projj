@@ -12,6 +12,11 @@ const binfile = path.join(__dirname, '../bin/projj.js');
 const fixtures = path.join(__dirname, 'fixtures');
 const tmp = path.join(fixtures, 'tmp');
 
+function assertClonedRepository(target: string) {
+  assert(fs.existsSync(target));
+  assert(fs.existsSync(path.join(target, '.git')));
+}
+
 describe('test/projj_add.test.js', () => {
 
   afterEach(mm.restore);
@@ -37,7 +42,7 @@ describe('test/projj_add.test.js', () => {
       .expect('code', 0)
       .end(err => {
         assert.ifError(err);
-        assert(fs.existsSync(path.join(target, 'package.json')));
+        assertClonedRepository(target);
 
         const cache = JSON.parse(fs.readFileSync(cachePath));
         assert(cache[path.join(tmp, 'github.com/popomore/projj')]);
@@ -62,7 +67,7 @@ describe('test/projj_add.test.js', () => {
       .expect('code', 0)
       .end(err => {
         assert.ifError(err);
-        assert(fs.existsSync(path.join(target, 'package.json')));
+        assertClonedRepository(target);
 
         const cache = JSON.parse(fs.readFileSync(cachePath));
         assert(cache[path.join(tmp, 'github.com/popomore/projj')]);
@@ -137,23 +142,30 @@ describe('test/projj_add.test.js', () => {
     const home = path.join(fixtures, 'multiple-directory');
     const repo = 'https://github.com/popomore/projj.git';
     const target = path.join(home, 'a', 'github.com', 'popomore', 'projj');
-    mm(process.env, 'HOME', home);
-
-    yield coffee.fork(binfile, [ 'add', repo ])
-      // .debug()
-      .waitForPrompt(false)
-      .write('\n')
-      .expect('code', 0)
-      .expect('stdout', new RegExp(`Start adding repository ${repo}`))
-      .expect('stdout', literalPattern(`Cloning into ${target}`))
-      .end();
-
-    assert(fs.existsSync(path.join(target, 'package.json')));
-
     const cachePath = path.join(home, '.projj/cache.json');
-    const cache = JSON.parse(fs.readFileSync(cachePath));
-    assert(cache[target].repo === 'https://github.com/popomore/projj.git');
-
+    const originalCache = fs.readFileSync(cachePath, 'utf8');
+    mm(process.env, 'HOME', home);
     yield rimraf(path.join(home, 'a'));
+
+    try {
+      yield coffee.fork(binfile, [ 'add', repo ])
+        // .debug()
+        .waitForPrompt(false)
+        .write('\n')
+        .expect('code', 0)
+        .expect('stdout', new RegExp(`Start adding repository ${repo}`))
+        .expect('stdout', literalPattern(`Cloning into ${target}`))
+        .end();
+
+      assertClonedRepository(target);
+
+      const cache = JSON.parse(fs.readFileSync(cachePath));
+      assert(cache[target].repo === 'https://github.com/popomore/projj.git');
+    } finally {
+      yield rimraf(path.join(home, 'a'));
+      fs.writeFileSync(cachePath, originalCache);
+    }
+
+    assert.strictEqual(fs.readFileSync(cachePath, 'utf8'), originalCache);
   });
 });

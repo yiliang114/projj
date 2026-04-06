@@ -1,14 +1,12 @@
-'use strict';
+import path = require('path');
+import fs = require('mz/fs');
 
-const path = require('path');
 const chalk = require('chalk');
 const BaseCommand = require('../base_command');
-const fs = require('mz/fs');
 const rimraf = require('mz-modules/rimraf');
 
 class RemoveCommand extends BaseCommand {
-
-  async _run(cwd, [ repo ]) {
+  async _run(cwd: string, [ repo ]: string[]) {
     if (!repo) {
       this.logger.error('Please specify the repo name:');
       this.childLogger.error(chalk.white('For example:'), chalk.green('projj remove', chalk.yellow('example')));
@@ -45,8 +43,7 @@ class RemoveCommand extends BaseCommand {
     }
   }
 
-
-  async confirm(repoName) {
+  async confirm(repoName: string): Promise<boolean> {
     const res = await this.prompt({
       message: `Please type in the name of the repository to confirm. ${chalk.green(repoName)} \n`,
       name: 'userInput',
@@ -66,8 +63,7 @@ class RemoveCommand extends BaseCommand {
     return false;
   }
 
-
-  async choose(choices) {
+  async choose(choices: string[]) {
     return await this.prompt({
       name: 'key',
       type: 'list',
@@ -79,7 +75,6 @@ class RemoveCommand extends BaseCommand {
   get description() {
     return 'Remove repository';
   }
-
 }
 
-module.exports = RemoveCommand;
+export = RemoveCommand;

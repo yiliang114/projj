@@ -1,8 +1,7 @@
-'use strict';
+import path = require('path');
+import fs = require('mz/fs');
 
 const inquirer = require('inquirer');
-const path = require('path');
-const fs = require('mz/fs');
 const mkdirp = require('mz-modules/mkdirp');
 const BaseCommand = require('common-bin');
 const ConsoleLogger = require('zlogger');
@@ -11,6 +10,7 @@ const runscript = require('runscript');
 const giturl = require('giturl');
 const readJSON = require('utility').readJSON;
 const Cache = require('./cache');
+
 const PROMPT = Symbol('prompt');
 
 const configDir = path.join(process.env.HOME, '.projj');
@@ -29,8 +29,13 @@ const defaults = {
 };
 
 class Command extends BaseCommand {
+  logger: any;
+  childLogger: any;
+  cache: any;
+  config: any;
+  [PROMPT]?: any;
 
-  constructor(rawArgv) {
+  constructor(rawArgv?: string[]) {
     super(rawArgv);
     this.logger = new ConsoleLogger({
       prefix: chalk.green('✔︎  '),
@@ -45,14 +50,13 @@ class Command extends BaseCommand {
     this.cache = new Cache({ cachePath });
   }
 
-  async run({ cwd, rawArgv }) {
+  async run({ cwd, rawArgv }: { cwd: string; rawArgv: string[] }) {
     try {
       await this.init();
       await this._run(cwd, rawArgv);
       consoleLogger.info('✨  Done');
-    } catch (err) {
+    } catch (err: any) {
       this.error(err.message);
-      // this.logger.error(err.stack);
       process.exit(1);
     }
   }
@@ -84,7 +88,6 @@ class Command extends BaseCommand {
     if (configExists) {
       config = await readJSON(configPath);
       config = resolveConfig(config, defaults);
-      // ignore when base has been defined in ~/.projj/config
       if (config.base) {
         this.config = config;
         return;
@@ -102,14 +105,14 @@ class Command extends BaseCommand {
     await fs.writeFile(configPath, JSON.stringify(this.config, null, 2));
   }
 
-  async runHook(name, cacheKey) {
+  async runHook(name: string, cacheKey?: string) {
     if (!this.config.hooks[name]) return;
     const hook = this.config.hooks[name];
     const env = this.buildHookEnv(name);
     if (this.config[name]) {
       env.PROJJ_HOOK_CONFIG = JSON.stringify(this.config[name]);
     }
-    const opt = {
+    const opt: any = {
       env: Object.assign({}, process.env, env),
     };
 
@@ -120,20 +123,16 @@ class Command extends BaseCommand {
     await this.runScript(hook, opt);
   }
 
-  async prompt(questions) {
+  async prompt(questions: any) {
     if (!this[PROMPT]) {
-      // create a self contained inquirer module.
       this[PROMPT] = inquirer.createPromptModule();
       const promptMapping = this[PROMPT].prompts;
       for (const key of Object.keys(promptMapping)) {
         const Clz = promptMapping[key];
-        // extend origin prompt instance to emit event
         promptMapping[key] = class CustomPrompt extends Clz {
-          /* istanbul ignore next */
-          static get name() { return Clz.name; }
           run() {
             process.send && process.send({ type: 'prompt', name: this.opt.name });
-            process.emit('message', { type: 'prompt', name: this.opt.name });
+            (process.emit as any)('message', { type: 'prompt', name: this.opt.name });
             return super.run();
           }
         };
@@ -142,20 +141,20 @@ class Command extends BaseCommand {
     return this[PROMPT](questions);
   }
 
-  async runScript(cmd, opt) {
+  async runScript(cmd: string, opt?: any) {
     opt = Object.assign({}, {
       stdio: 'pipe',
     }, opt);
     try {
       const stdio = await runscript(cmd, opt);
       this.forwardScriptOutput(stdio);
-    } catch (err) {
+    } catch (err: any) {
       this.forwardScriptOutput(err.stdio);
       throw err;
     }
   }
 
-  forwardScriptOutput(stdio) {
+  forwardScriptOutput(stdio?: { stdout?: any; stderr?: any }) {
     if (!stdio) return;
     if (stdio.stdout) {
       for (const line of splitLines(stdio.stdout)) {
@@ -169,19 +168,16 @@ class Command extends BaseCommand {
     }
   }
 
-  error(msg) {
+  error(msg: string) {
     consoleLogger.error(chalk.red('✘  ' + msg));
   }
 
-  // https://github.com/popomore/projj.git
-  // => $BASE/github.com/popomore/projj
-  url2dir(url) {
+  url2dir(url: string) {
     url = giturl.parse(url);
     return url.replace(/https?:\/\//, '');
   }
 
-  async addRepo(repo, cacheKey) {
-    // preadd hook
+  async addRepo(repo: string, cacheKey: string) {
     await this.runHook('preadd', cacheKey);
 
     const targetPath = cacheKey;
@@ -192,11 +188,9 @@ class Command extends BaseCommand {
     await this.runScript(this.buildCloneCommand(repo, targetPath), {
       env,
     });
-    // add this repository to cache.json
     await this.cache.set(cacheKey, { repo });
     await this.cache.dump();
 
-    // preadd hook
     await this.runHook('postadd', cacheKey);
   }
 
@@ -214,11 +208,11 @@ class Command extends BaseCommand {
     return base;
   }
 
-  buildCloneCommand(repo, targetPath) {
+  buildCloneCommand(repo: string, targetPath: string) {
     return `git clone --progress ${repo} ${targetPath}`;
   }
 
-  buildHookEnv(name, env = process.env, delimiter = path.delimiter) {
+  buildHookEnv(name: string, env = process.env, delimiter = path.delimiter): Record<string, string> {
     const hookDir = path.join(configDir, 'hooks');
     const hookPath = env.PATH ? `${hookDir}${delimiter}${env.PATH}` : hookDir;
 
@@ -234,7 +228,7 @@ class Command extends BaseCommand {
     }, env, normalizeProxyEnv(env));
   }
 
-  logGitProxySettings(env) {
+  logGitProxySettings(env: Record<string, string | undefined>) {
     const proxySettings = [];
     if (env.https_proxy) proxySettings.push(`https_proxy=${maskProxyValue(env.https_proxy)}`);
     if (env.http_proxy) proxySettings.push(`http_proxy=${maskProxyValue(env.http_proxy)}`);
@@ -245,11 +239,11 @@ class Command extends BaseCommand {
     }
   }
 
-  normalizeCacheKey(key) {
+  normalizeCacheKey(key: string) {
     return key.replace(/\\/g, '/');
   }
 
-  getRepoKey(key) {
+  getRepoKey(key: string) {
     const normalizedKey = this.normalizeCacheKey(key);
     const baseDirectories = (this.config && this.config.base) || [];
 
@@ -264,7 +258,7 @@ class Command extends BaseCommand {
     return normalizedKey;
   }
 
-  matchRepoKeys(keys, repo) {
+  matchRepoKeys(keys: string[], repo: string) {
     const normalizedRepo = this.normalizeCacheKey(repo);
     const suffix = normalizedRepo.replace(/^\/?/, '/');
 
@@ -276,20 +270,20 @@ class Command extends BaseCommand {
     return matched;
   }
 
-  getRepoLabel(key) {
+  getRepoLabel(key: string) {
     const parts = this.getRepoKey(key).split('/').filter(Boolean);
     return parts.slice(-2).join('/');
   }
 }
 
-module.exports = Command;
+export = Command;
 
-function resolveConfig(config, defaults) {
-  config = Object.assign({}, defaults, config);
+function resolveConfig(config: any, defaultConfig: any) {
+  config = Object.assign({}, defaultConfig, config);
   if (!Array.isArray(config.base)) {
     config.base = [ config.base ];
   }
-  config.base = config.base.map(baseDir => {
+  config.base = config.base.map((baseDir: string) => {
     switch (baseDir[0]) {
       case '.':
         return path.join(path.dirname(configPath), baseDir);
@@ -305,8 +299,8 @@ function resolveConfig(config, defaults) {
   return config;
 }
 
-function normalizeProxyEnv(env) {
-  const normalized = {};
+function normalizeProxyEnv(env: Record<string, string | undefined>) {
+  const normalized: Record<string, string> = {};
   applyProxyPair(normalized, 'https_proxy', 'HTTPS_PROXY', pickFirstEnvValue(env, [
     'https_proxy',
     'HTTPS_PROXY',
@@ -334,20 +328,20 @@ function normalizeProxyEnv(env) {
   return normalized;
 }
 
-function applyProxyPair(target, lowerKey, upperKey, value) {
+function applyProxyPair(target: Record<string, string>, lowerKey: string, upperKey: string, value?: string) {
   if (!value) return;
   target[lowerKey] = value;
   target[upperKey] = value;
 }
 
-function pickFirstEnvValue(env, keys) {
+function pickFirstEnvValue(env: Record<string, string | undefined>, keys: string[]) {
   for (const key of keys) {
     if (env[key]) return env[key];
   }
   return undefined;
 }
 
-function maskProxyValue(value) {
+function maskProxyValue(value: string) {
   try {
     const url = new URL(value);
     if (url.username || url.password) {
@@ -360,7 +354,7 @@ function maskProxyValue(value) {
   }
 }
 
-function splitLines(value) {
+function splitLines(value: any) {
   return String(value)
     .replace(/\r\n/g, '\n')
     .split('\n')

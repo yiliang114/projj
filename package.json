@@ -1,6 +1,6 @@
 {
   "name": "@yiliang114/projj",
-  "version": "2.1.2",
+  "version": "3.0.0",
   "description": "Manage repository easily.",
   "dependencies": {
     "chalk": "^3.0.0",
@@ -17,28 +17,35 @@
     "zlogger": "^1.1.0"
   },
   "devDependencies": {
+    "@types/node": "^24.6.0",
     "autod": "^3.1.0",
     "coffee": "^5.2.2",
     "egg-bin": "^4.14.1",
     "egg-ci": "^1.13.1",
     "eslint": "^6.8.0",
     "eslint-config-egg": "^8.0.1",
-    "mm": "^2.5.0"
+    "mm": "^2.5.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=10.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "autod": "autod",
+    "build": "npm run clean && tsc -p tsconfig.build.json && tsc --module CommonJS --target ES2020 --moduleResolution Node --resolveJsonModule --esModuleInterop false --strict false --skipLibCheck --types node --noEmitOnError bin/projj.ts && eslint --no-ignore --fix \"bin/projj.js\" \"lib/*.js\" \"lib/command/*.js\" && node -e \"const fs = require('fs'); ['bin/projj.js', 'lib/ssh.js'].forEach(file => fs.chmodSync(file, 0o755));\"",
+    "clean": "node -e \"const fs = require('fs'); fs.rmSync('bin/projj.js', { force: true }); fs.rmSync('lib', { recursive: true, force: true });\"",
     "lint": "eslint .",
-    "smoke:add": "node test/smoke_add.js",
+    "smoke:add": "npm run build && node -r ts-node/register/transpile-only test/smoke_add.ts",
     "test": "npm run lint -- --fix && npm run test-local",
-    "test-local": "egg-bin test",
-    "cov": "egg-bin cov",
-    "ci": "npm run lint && npm run cov"
+    "test-local": "npm run build && egg-bin test --ts --tscompiler ts-node/register/transpile-only",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "cov": "npm run build && egg-bin cov --ts --tscompiler ts-node/register/transpile-only",
+    "ci": "npm run lint && npm run build && npm run typecheck && npm run cov",
+    "prepack": "npm run build"
   },
   "ci": {
-    "version": "10, 12",
+    "version": "20, 22",
     "license": {
       "fullname": "popomore"
     }
@@ -47,7 +54,7 @@
     "projj": "bin/projj.js"
   },
   "files": [
-    "bin",
+    "bin/projj.js",
     "lib"
   ],
   "repository": {

@@ -1,16 +1,16 @@
-'use strict';
+import path = require('path');
+import fs = require('mz/fs');
 
-const path = require('path');
-const fs = require('mz/fs');
 const ora = require('ora');
 const runscript = require('runscript');
 const chalk = require('chalk');
 const BaseCommand = require('../base_command');
 
-
 class ImportCommand extends BaseCommand {
+  spinner: any;
+  count: number;
 
-  async _run(cwd, [ from ]) {
+  async _run(cwd: string, [ from ]: string[]) {
     let repos = [];
     if (from === '--cache') {
       const keys = await this.cache.getKeys();
@@ -43,36 +43,33 @@ class ImportCommand extends BaseCommand {
     }
   }
 
-  async findDirs(cwd) {
+  async findDirs(cwd: string): Promise<string[]> {
     this.spinner.text = `Found ${chalk.cyan(this.count)}, Searching ${cwd}`;
     const dirs = await fs.readdir(cwd);
 
-    // match the directory
     if (dirs.includes('.git')) {
       try {
         const { stdout } = await runscript('git config --get remote.origin.url', { stdio: 'pipe', cwd });
         this.spinner.text = `Found ${chalk.cyan(this.count++)}, Searching ${cwd}`;
         return [ stdout.toString().slice(0, -1) ];
       } catch (e) {
-        // it contains .git, but no remote.url
         return [];
       }
     }
 
-    // ignore node_modules
     if (dirs.includes('node_modules')) {
       return [];
     }
 
-    let gitdir = [];
+    let gitdir: string[] = [];
     for (const dir of dirs) {
       const subdir = path.join(cwd, dir);
       const stat = await fs.stat(subdir);
       if (!stat.isDirectory()) {
         continue;
       }
-      const d = await this.findDirs(subdir);
-      gitdir = gitdir.concat(d);
+      const subdirs = await this.findDirs(subdir);
+      gitdir = gitdir.concat(subdirs);
     }
     return gitdir;
   }
@@ -80,7 +77,6 @@ class ImportCommand extends BaseCommand {
   get description() {
     return 'Import repositories from existing directory';
   }
-
 }
 
-module.exports = ImportCommand;
+export = ImportCommand;

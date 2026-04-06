@@ -1,5 +1,3 @@
-'use strict';
-
 const BaseCommand = require('../base_command');
 
 class InitCommand extends BaseCommand {
@@ -10,7 +8,6 @@ class InitCommand extends BaseCommand {
   get description() {
     return 'Initialize configuration';
   }
-
 }
 
-module.exports = InitCommand;
+export = InitCommand;

@@ -1,2 +1,4 @@
 coverage
+bin/projj.js
+lib/
 node_modules

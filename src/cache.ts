@@ -1,16 +1,27 @@
-'use strict';
+import assert = require('assert');
+import fs = require('mz/fs');
 
-const assert = require('assert');
-const fs = require('mz/fs');
-const readJSON = require('utility').readJSON;
+const readJSON = require('utility').readJSON as (path: string) => Promise<Record<string, any>>;
 
-module.exports = class Cache {
-  constructor(options) {
+type CacheEntry = {
+  repo?: string;
+};
+
+type CacheStore = {
+  version?: string;
+  [key: string]: CacheEntry | string | undefined;
+};
+
+class Cache {
+  cachePath: string;
+  cache?: CacheStore;
+
+  constructor(options: { cachePath: string }) {
     assert(options && options.cachePath, 'cachePath is required');
     this.cachePath = options.cachePath;
   }
 
-  async get(key) {
+  async get(key?: string) {
     if (!this.cache) {
       if (await fs.exists(this.cachePath)) {
         this.cache = await readJSON(this.cachePath);
@@ -24,21 +35,21 @@ module.exports = class Cache {
   }
 
   async getKeys() {
-    const cache = await this.get();
+    const cache = await this.get() as CacheStore;
     return Object.keys(cache).filter(key => key !== 'version');
   }
 
-  async set(key, value) {
+  async set(key?: string, value?: CacheEntry) {
     if (!key) return;
     if (!this.cache) await this.get();
 
-    this.cache[key] = value || {};
+    this.cache![key] = value || {};
   }
 
-  async remove(keys) {
+  async remove(keys?: string | string[]) {
     if (!keys) return;
     if (!Array.isArray(keys)) keys = [ keys ];
-    keys.forEach(key => delete this.cache[key]);
+    keys.forEach(key => delete this.cache![key]);
   }
 
   async dump() {
@@ -46,23 +57,22 @@ module.exports = class Cache {
     await fs.writeFile(this.cachePath, JSON.stringify(this.cache, null, 2));
   }
 
-  async setRepo(cache) {
+  async setRepo(cache: CacheStore) {
     const keys = await this.getKeys();
     for (const key of keys) {
-      if (cache[key] && cache[key].repo) continue;
+      const entry = cache[key] as CacheEntry | undefined;
+      if (entry && entry.repo) continue;
       const option = cache[key] = {};
       const s = key.split('/');
-      option.repo = `git@${s[0]}:${s[1]}/${s[2]}.git`;
+      (option as CacheEntry).repo = `git@${s[0]}:${s[1]}/${s[2]}.git`;
     }
     await this.dump();
   }
 
   async upgrade() {
-    const cache = await this.get();
+    const cache = await this.get() as CacheStore;
     switch (cache.version) {
-      // v1 don't upgrade
       case 'v1':
-        /* istanbul ignore next */
         return;
       default:
     }
@@ -71,5 +81,6 @@ module.exports = class Cache {
 
     await this.dump();
   }
+}
 
-};
+export = Cache;

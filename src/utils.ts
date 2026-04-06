@@ -1,6 +1,4 @@
-'use strict';
-
-exports.generateAppleScript = dir => {
+const generateAppleScript = (dir: string) => {
   const terminalCommand = `tell application "Terminal"
     do script "cd ${dir}"  in front window
   end tell`.split('\n').map(line => (` -e '${line.trim()}'`)).join('');
@@ -16,4 +14,8 @@ exports.generateAppleScript = dir => {
   end tell`.split('\n').map(line => (` -e '${line.trim()}'`)).join('');
 
   return `[ \`osascript ${currentApp}\` = "Terminal" ] && osascript ${terminalCommand} >/dev/null || osascript ${iTermCommand}`;
+};
+
+export = {
+  generateAppleScript,
 };
