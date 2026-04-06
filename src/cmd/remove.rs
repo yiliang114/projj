@@ -55,6 +55,7 @@ pub fn run(keyword: &str) -> Result<()> {
 
     // Clean up empty parent directories
     let parent = Path::new(&target).parent();
+    #[allow(clippy::collapsible_if)] // Keep the 1.85-compatible form used by this fork.
     if let Some(p) = parent {
         if p.read_dir().is_ok_and(|mut d| d.next().is_none()) {
             let _ = fs::remove_dir(p);

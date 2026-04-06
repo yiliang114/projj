@@ -155,6 +155,7 @@ pub fn fzf_indexed(items: &[String], query: Option<&str>) -> Result<Option<usize
 
         if output.status.success() {
             let line = String::from_utf8(output.stdout)?.trim().to_string();
+            #[allow(clippy::collapsible_if)] // Keep the 1.85-compatible form used by this fork.
             if let Some(idx_str) = line.split('\t').next() {
                 if let Ok(idx) = idx_str.parse::<usize>() {
                     return Ok(Some(idx));

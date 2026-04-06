@@ -78,6 +78,7 @@ pub fn parse_repo(input: &str, default_platform: &str) -> Result<RepoInfo> {
     }
 
     // Short form: owner/repo
+    #[allow(clippy::collapsible_if)] // Keep the 1.85-compatible form used by this fork.
     if let Some((owner, repo)) = input.split_once('/') {
         if !owner.is_empty() && !repo.is_empty() && !owner.contains('.') {
             let host = default_platform.to_string();
@@ -99,6 +100,7 @@ pub fn parse_repo(input: &str, default_platform: &str) -> Result<RepoInfo> {
 /// Strip port from host string: "git.gitlab.cn:2224" → "git.gitlab.cn"
 fn strip_port(host: &str) -> String {
     // If it looks like host:port (port is all digits), strip the port
+    #[allow(clippy::collapsible_if)] // Keep the 1.85-compatible form used by this fork.
     if let Some((h, port)) = host.rsplit_once(':') {
         if port.chars().all(|c| c.is_ascii_digit()) {
             return h.to_string();
