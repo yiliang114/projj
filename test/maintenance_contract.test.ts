@@ -66,8 +66,15 @@ describe('test/maintenance_contract.test.js', () => {
     assert.strictEqual(pkg.engines.node, '>=20.0.0');
     assert.strictEqual(pkg.ci.version, '20, 22');
     assert(readme.includes('Requires Node.js 20 or newer.'));
+    assert(readme.includes('## Release'));
+    assert(readme.includes('Merging a pull request into `main` automatically runs the publish workflow.'));
+    assert(readme.includes('If the package version has not been published yet, the workflow publishes to npm and creates the matching GitHub release.'));
     assert(nodeWorkflow.includes('node-version: [20, 22]'));
     assert(publishWorkflow.includes('run: npm run ci'));
+    assert(publishWorkflow.includes('contents: write'));
+    assert(publishWorkflow.includes('Check GitHub release existence'));
+    assert(publishWorkflow.includes('Create GitHub release'));
+    assert(publishWorkflow.includes('GH_TOKEN: ${{ github.token }}'));
     assert.strictEqual(isTrackedPath(repoRoot, '.travis.yml'), false);
     assert.strictEqual(isTrackedPath(repoRoot, 'appveyor.yml'), false);
   });
