@@ -12,6 +12,11 @@ const binfile = path.join(__dirname, '../bin/projj.js');
 const fixtures = path.join(__dirname, 'fixtures');
 const tmp = path.join(fixtures, 'tmp');
 
+function assertClonedRepository(target: string) {
+  assert(fs.existsSync(target));
+  assert(fs.existsSync(path.join(target, '.git')));
+}
+
 describe('test/projj_add.test.js', () => {
 
   afterEach(mm.restore);
@@ -37,7 +42,7 @@ describe('test/projj_add.test.js', () => {
       .expect('code', 0)
       .end(err => {
         assert.ifError(err);
-        assert(fs.existsSync(path.join(target, 'package.json')));
+        assertClonedRepository(target);
 
         const cache = JSON.parse(fs.readFileSync(cachePath));
         assert(cache[path.join(tmp, 'github.com/popomore/projj')]);
@@ -62,7 +67,7 @@ describe('test/projj_add.test.js', () => {
       .expect('code', 0)
       .end(err => {
         assert.ifError(err);
-        assert(fs.existsSync(path.join(target, 'package.json')));
+        assertClonedRepository(target);
 
         const cache = JSON.parse(fs.readFileSync(cachePath));
         assert(cache[path.join(tmp, 'github.com/popomore/projj')]);
@@ -152,7 +157,7 @@ describe('test/projj_add.test.js', () => {
         .expect('stdout', literalPattern(`Cloning into ${target}`))
         .end();
 
-      assert(fs.existsSync(path.join(target, 'package.json')));
+      assertClonedRepository(target);
 
       const cache = JSON.parse(fs.readFileSync(cachePath));
       assert(cache[target].repo === 'https://github.com/popomore/projj.git');
