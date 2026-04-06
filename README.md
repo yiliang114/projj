@@ -54,6 +54,14 @@ $ npm i -g @yiliang114/projj
 
 Requires Node.js 20 or newer.
 
+## Release
+
+Merging a pull request into `main` automatically runs the publish workflow.
+
+If the package version has not been published yet, the workflow publishes to npm and creates the matching GitHub release. The GitHub release also creates the corresponding `v<version>` tag when it does not already exist.
+
+If you need to rerun publication manually, use the `Publish npm package` workflow from the `main` branch.
+
 ## Usage
 
 ### Initialize
