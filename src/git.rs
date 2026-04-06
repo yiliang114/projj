@@ -78,21 +78,19 @@ pub fn parse_repo(input: &str, default_platform: &str) -> Result<RepoInfo> {
     }
 
     // Short form: owner/repo
-    if let Some((owner, repo)) = input.split_once('/')
-        && !owner.is_empty()
-        && !repo.is_empty()
-        && !owner.contains('.')
-    {
-        let host = default_platform.to_string();
-        let repo = repo.to_string();
-        let owner = owner.to_string();
-        let clone_url = format!("git@{host}:{owner}/{repo}.git");
-        return Ok(RepoInfo {
-            host,
-            owner,
-            repo,
-            clone_url,
-        });
+    if let Some((owner, repo)) = input.split_once('/') {
+        if !owner.is_empty() && !repo.is_empty() && !owner.contains('.') {
+            let host = default_platform.to_string();
+            let repo = repo.to_string();
+            let owner = owner.to_string();
+            let clone_url = format!("git@{host}:{owner}/{repo}.git");
+            return Ok(RepoInfo {
+                host,
+                owner,
+                repo,
+                clone_url,
+            });
+        }
     }
 
     bail!("Cannot parse repository: {input}")
@@ -101,10 +99,10 @@ pub fn parse_repo(input: &str, default_platform: &str) -> Result<RepoInfo> {
 /// Strip port from host string: "git.gitlab.cn:2224" → "git.gitlab.cn"
 fn strip_port(host: &str) -> String {
     // If it looks like host:port (port is all digits), strip the port
-    if let Some((h, port)) = host.rsplit_once(':')
-        && port.chars().all(|c| c.is_ascii_digit())
-    {
-        return h.to_string();
+    if let Some((h, port)) = host.rsplit_once(':') {
+        if port.chars().all(|c| c.is_ascii_digit()) {
+            return h.to_string();
+        }
     }
     host.to_string()
 }

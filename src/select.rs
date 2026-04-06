@@ -155,10 +155,10 @@ pub fn fzf_indexed(items: &[String], query: Option<&str>) -> Result<Option<usize
 
         if output.status.success() {
             let line = String::from_utf8(output.stdout)?.trim().to_string();
-            if let Some(idx_str) = line.split('\t').next()
-                && let Ok(idx) = idx_str.parse::<usize>()
-            {
-                return Ok(Some(idx));
+            if let Some(idx_str) = line.split('\t').next() {
+                if let Ok(idx) = idx_str.parse::<usize>() {
+                    return Ok(Some(idx));
+                }
             }
         }
         Ok(None)

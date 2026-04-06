@@ -55,10 +55,10 @@ pub fn run(keyword: &str) -> Result<()> {
 
     // Clean up empty parent directories
     let parent = Path::new(&target).parent();
-    if let Some(p) = parent
-        && p.read_dir().is_ok_and(|mut d| d.next().is_none())
-    {
-        let _ = fs::remove_dir(p);
+    if let Some(p) = parent {
+        if p.read_dir().is_ok_and(|mut d| d.next().is_none()) {
+            let _ = fs::remove_dir(p);
+        }
     }
 
     // post_remove hooks (cwd is parent since repo dir is gone)
